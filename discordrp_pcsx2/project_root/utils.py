@@ -27,8 +27,12 @@ class Game:
         match = game_pattern.search(line)
         if match is not None:
             game_id = match.group(1).replace('_', '-').replace('.', '')
-        with open(f'{self.path}/bin/GameIndex.dbf') as file:
-            metadata = file.read()
+        try:
+            file = open(f'{self.path}/bin/GameIndex.dbf')
+        except FileNotFoundError:
+            file = open(f'{self.path}/GameIndex.dbf')
+        metadata = file.read()
+        file.close()
         match = re.search(
             meta_pattern.format(game_id),
             metadata
@@ -49,7 +53,11 @@ class Game:
 def latest_game(path: str) -> Optional[Game]:
     "Find the latest loaded game from emuLog.txt."
     line = ''
-    log_file = open(f'{path}/bin/logs/emuLog.txt')
+    try:
+        log_file = open(f'{path}/bin/logs/emuLog.txt')
+    except FileNotFoundError:
+        log_file = open(f'{path}/logs/emuLog.txt')
+
     for block in _reverse_read(log_file):
         for char in block:
             if char == '\n' and line:
@@ -57,6 +65,7 @@ def latest_game(path: str) -> Optional[Game]:
                     return Game(line=line, path=path)
                 line = ''
             line += char
+    log_file.close()
     if Game.check_line(line):
         return Game(line=line, path=path)
     else:
